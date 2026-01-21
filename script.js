@@ -88,6 +88,7 @@ var selectNamePart;
 var csvParts;
 var importCsvGoal;
 var curCsvGoal;
+var isSelectItem = false;
 
 window.addEventListener("load", function () {
     main();
@@ -332,7 +333,7 @@ function init() {
             if (numberTotal != "*") {
                 eleTdDataDiff.innerText = numberTotal - numberGoal;
 
-                if (Number(eleTdDataDiff.innerText) < 0) {
+                if ((value != undefined) && (Number(eleTdDataDiff.innerText) < 0)) {
                     let attrs = eleTdDataDiff.getAttribute("class").split(" ");
                     attrs.push("bgRed");
                     eleTdDataDiff.setAttribute("class", attrs.join(" "));
@@ -443,6 +444,12 @@ function getNameAbb(nameItem) {
 
 function btnHandlerSelectItem(btn) {
     if (!isImport) {
+        alert("インポートしていません。")
+        return;
+    }
+
+    if (isSelectItem) {
+        alert("アイテム選択中です。")
         return;
     }
 
@@ -466,10 +473,12 @@ function btnHandlerSelectItem(btn) {
         }
     );
     csvParts.sort();
-    let eleLabel = document.createElement("label");
-    eleLabel.innerText = `${csvParts.length}件`;
-    divs.divPartSelector.appendChild(eleLabel);
+    // let eleLabel = document.createElement("label");
+    // eleLabel.innerText = `${csvParts.length}件`;
+    // divs.divPartSelector.appendChild(eleLabel);
+    document.querySelector("#lSelectItemStatus").innerText = `${btn.target.value} ${csvParts.length}件`;
     makeTblSelectItem();
+    isSelectItem = true;
     return;
 }
 
@@ -490,6 +499,8 @@ function btnHandlerCanselSelect(btn) {
         element.remove();
     }
 
+    document.querySelector("#lSelectItemStatus").innerText = "";
+    isSelectItem = false;
     return;
 }
 
@@ -671,6 +682,8 @@ function btnHandlerApplyItem(btn) {
 
     init();
     btnHandlerCanselSelect();
+    document.querySelector("#lSelectItemStatus").innerText = "";
+    isSelectItem = false;
     return;
 }
 
