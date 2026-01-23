@@ -83,7 +83,7 @@ var divs = {};
 var tas = {};
 var importCsvNameEquips;
 var csvCurNameEquips;
-var statusSort = SORT_DEFAULT;
+var statusSort;
 var selectNamePart;
 var csvParts;
 var importCsvGoal;
@@ -284,6 +284,9 @@ function init() {
 
             if (value != undefined) {
                 eleInput.setAttribute("value", value);
+                let attrs = eleTdGoal.getAttribute("class").split(" ");
+                attrs.push("bgGoal");
+                eleTdGoal.setAttribute("class", attrs.join(" "));
             }
 
             eleTdGoal.appendChild(eleInput);
@@ -335,7 +338,7 @@ function init() {
 
                 if ((value != undefined) && (Number(eleTdDataDiff.innerText) < 0)) {
                     let attrs = eleTdDataDiff.getAttribute("class").split(" ");
-                    attrs.push("bgRed");
+                    attrs.push("bgNotEnough");
                     eleTdDataDiff.setAttribute("class", attrs.join(" "));
                 }
             }
@@ -392,12 +395,18 @@ function makeTblListPart(csvNameEquips) {
     for (const element of HEAD_EQUIP_TR_PART) {
         let eleTr = document.createElement("tr");
         let eleTh = document.createElement("th");
-        let eleInputButton = document.createElement("input");
-        eleInputButton.setAttribute("type", "button");
-        eleInputButton.setAttribute("id", `btn_part_${element.id}`);
-        eleInputButton.setAttribute("value", element.name);
-        eleInputButton.addEventListener("click", btnHandlerSelectItem);
-        eleTh.appendChild(eleInputButton);
+        let eleInputButtonPart = document.createElement("input");
+        eleInputButtonPart.setAttribute("type", "button");
+        eleInputButtonPart.setAttribute("id", `btn_part_${element.id}`);
+        eleInputButtonPart.setAttribute("value", element.name);
+        eleInputButtonPart.addEventListener("click", btnHandlerSelectItem);
+        eleTh.appendChild(eleInputButtonPart);
+        let eleInputButtonRemove = document.createElement("input");
+        eleInputButtonRemove.setAttribute("type", "button");
+        eleInputButtonRemove.setAttribute("id", `btn_remove_${element.id}`);
+        eleInputButtonRemove.setAttribute("value", "外");
+        eleInputButtonRemove.addEventListener("click", btnHandlerRemoveItem);
+        eleTh.appendChild(eleInputButtonRemove);
         eleTr.appendChild(eleTh);
         let eleTd = document.createElement("td");
         eleTd.setAttribute("class", "border");
@@ -428,6 +437,38 @@ function makeTblListPart(csvNameEquips) {
     return;
 }
 
+function btnHandlerRemoveItem(btn) {
+    //インポートしてないか
+    if (!isImport) {
+        alert("インポートしていません。")
+        return;
+    }
+
+    //部位選択中か
+    if (isSelectItem) {
+        alert("アイテム選択中です。")
+        return;
+    }
+
+    selectNamePart = btn.target.id.split("_").pop();
+    let indexFind;
+    let find = csvCurNameEquips.find(
+        (value, index) => {
+            indexFind = index;
+            return value[0] == selectNamePart;
+        }
+    );
+
+    //部位が設定されてないか
+    if (find == null) {
+        return;
+    }
+
+    csvCurNameEquips.splice(indexFind, 1);
+    init();
+    return;
+}
+
 function getNameAbb(nameItem) {
     let rtn = nameItem;
     let indexItem = nameItems.indexOf(nameItem);
@@ -443,11 +484,13 @@ function getNameAbb(nameItem) {
 }
 
 function btnHandlerSelectItem(btn) {
+    //インポートしてないか
     if (!isImport) {
         alert("インポートしていません。")
         return;
     }
 
+    //部位選択中か
     if (isSelectItem) {
         alert("アイテム選択中です。")
         return;
@@ -473,6 +516,7 @@ function btnHandlerSelectItem(btn) {
         }
     );
     csvParts.sort();
+    statusSort = SORT_DEFAULT;
     // let eleLabel = document.createElement("label");
     // eleLabel.innerText = `${csvParts.length}件`;
     // divs.divPartSelector.appendChild(eleLabel);
@@ -588,7 +632,7 @@ function makeTblSelectItem() {
 
     let eleInputButton = eleTr.querySelector(`#${statusSort}`);
     eleInputButton.disabled = true;
-    eleInputButton.parentNode.setAttribute("class", "vertical bgLime");
+    eleInputButton.parentNode.setAttribute("class", "vertical bgSortKey");
     eleTbl.appendChild(eleTr);
 
     //インポートしたか
@@ -629,7 +673,8 @@ function makeTblSelectItem() {
                 eleTd.setAttribute("id", `td_item_${indexY}_${indexX + 1}`);
 
                 if (indexX >= PRE_COLS.length) {
-                    // eleTd.addEventListener("click", cellHandlerShowPst);
+                    eleTd.addEventListener("click", cellHandlerShowPst);
+                    // eleTd.addEventListener("mouseover", cellHandlerShowPst);
                 }
 
                 eleTd.innerText = tmpElement;
@@ -651,7 +696,7 @@ function makeTblSelectItem() {
             }
 
             let attrs = element.getAttribute("class").split(" ");
-            attrs.push("bgLime");
+            attrs.push("bgSortKey");
             element.setAttribute("class", attrs.join(" "));
         }
     }
@@ -732,12 +777,14 @@ function btnHandlerSort(btn) {
 
 function cellHandlerShowPst(cell) {
     let pst = cell.target.id.split("_");
-    let pstX = pst.pop();
-    let pstY = pst.pop();
+    let pstX = Number(pst.pop());
+    let pstY = Number(pst.pop());
     let trs = divs.divPartSelector.querySelectorAll("tr");
-    let tds = trs[pstY].querySelectorAll("td");
+    let tds = trs[pstY + 1].querySelectorAll("td");
     let ths = divs.divPartSelector.querySelectorAll("th");
-    alert([tds[PRE_COLS.length].innerText, importCsvItem[0][pstX]].join("\n"));
+    let url = `./sub.html?row=${tds[PRE_COLS.length].innerText}&col=${importCsvItem[0][pstX - PRE_COLS.length]}&value=${cell.target.innerText}`;
+    let subWindow = window.open(url, "sub_UOCoordinater");
+    // alert([tds[PRE_COLS.length].innerText, importCsvItem[0][pstX - PRE_COLS.length]].join("\n"));
     return;
 }
 
